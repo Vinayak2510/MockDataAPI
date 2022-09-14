@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
+using MockDataAPI.NewFolder;
+using Newtonsoft.Json;
 
 namespace MockDataAPI.Controllers
 {
@@ -10,36 +14,37 @@ namespace MockDataAPI.Controllers
     [ApiController]
     public class ValuesController : ControllerBase
     {
-        // GET api/values
-        [HttpGet]
-        public ActionResult<IEnumerable<string>> Get()
-        {
-            return new string[] { "value1", "value2" };
-        }
+        private readonly IMemoryCache _memoryCache;
 
-        // GET api/values/5
-        [HttpGet("{id}")]
-        public ActionResult<string> Get(int id)
-        {
-            return "value";
-        }
-
-        // POST api/values
         [HttpPost]
-        public void Post([FromBody] string value)
+        public IActionResult Post([FromBody] InputDTO mockObject)
         {
-        }
-
-        // PUT api/values/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
-
-        // DELETE api/values/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
+            string input = JsonConvert.SerializeObject(mockObject.Fields);
+            var dic = JsonConvert.DeserializeObject<Dictionary<string,Object>>(input);
+            Random rnd = new Random();
+            List<Object> list = new List<Object>();
+            for (int i = 0; i < mockObject.Count; i++)
+            {
+                var dic1 = new Dictionary<string, Object>();
+                foreach (var x in dic.Keys)
+                {
+                    switch (dic[x])
+                    {
+                        case "int":
+                            dic1[x] = rnd.Next();
+                            break;
+                        case "string":
+                            dic1[x] = "x";
+                            break;
+                        default:
+                            dic1[x] = new DateTime();
+                            break;
+                    }
+                }
+                list.Add(dic1);
+            }
+            var result = JsonConvert.SerializeObject(list);
+            return Ok(list);
         }
     }
 }
